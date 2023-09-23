@@ -1,6 +1,9 @@
 body{
 	background:#fff;
 }
-.header{
+#c1{
+	width:200px;
+	height:200px;
+	background-color: rgb(127, 69, 69);
 
 }
