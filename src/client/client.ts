@@ -15,7 +15,8 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-new OrbitControls(camera, renderer.domElement);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.addEventListener('change', render);
 
 const geometry = new THREE.BoxGeometry();
 const material = new THREE.MeshBasicMaterial({
@@ -34,13 +35,15 @@ function onWindowResize() {
   render();
 }
 
+//request a callback to provide the animation, generally occurs at 60 frames a second
 function animate() {
   requestAnimationFrame(animate);
 
-  cube.rotation.x += 0.01;
-  cube.rotation.y += 0.01;
+  cube.rotation.z += 0.001;
+  cube.rotation.x += 0.0009;
+  cube.rotation.y += 0.0001;
 
-  render();
+  //having a render function inside animate() is necessary to see the animation in the screen, but render can also be called outside this function and
 }
 
 function render() {
@@ -48,3 +51,4 @@ function render() {
 }
 
 animate();
+render();
