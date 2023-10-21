@@ -1,7 +1,14 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
+import Stats from 'three/examples/jsm/libs/stats.module';
 
 const scene = new THREE.Scene();
+scene.add(new THREE.AxesHelper(5));
+
+const light = new THREE.PointLight(0xffffff, 1000);
+light.position.set(2.5, 7.5, 15);
+scene.add(light);
 
 const camera = new THREE.PerspectiveCamera(
   75,
@@ -9,23 +16,39 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000
 );
-camera.position.z = 2;
+camera.position.z = 3;
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.addEventListener('change', render);
+controls.enableDamping = true;
 
-const geometry = new THREE.BoxGeometry();
 const material = new THREE.MeshBasicMaterial({
   color: 0x00ff00,
   wireframe: true,
 });
 
-const cube = new THREE.Mesh(geometry, material);
-scene.add(cube);
+const objLoader = new OBJLoader();
+objLoader.load(
+  'models/cube.obj',
+  (object) => {
+    (object.children[0] as THREE.Mesh).material = material;
+    // object.traverse(function (child) {
+    //     if ((child as THREE.Mesh).isMesh) {
+    //         (child as THREE.Mesh).material = material
+    //     }
+    // })
+    scene.add(object);
+  },
+  (xhr) => {
+    console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
+  },
+  (error) => {
+    console.log(error);
+  }
+);
 
 window.addEventListener('resize', onWindowResize, false);
 function onWindowResize() {
@@ -35,15 +58,17 @@ function onWindowResize() {
   render();
 }
 
-//request a callback to provide the animation, generally occurs at 60 frames a second
+const stats = new Stats();
+document.body.appendChild(stats.dom);
+
 function animate() {
   requestAnimationFrame(animate);
 
-  cube.rotation.z += 0.001;
-  cube.rotation.x += 0.0009;
-  cube.rotation.y += 0.0001;
+  controls.update();
 
-  //having a render function inside animate() is necessary to see the animation in the screen, but render can also be called outside this function and
+  render();
+
+  stats.update();
 }
 
 function render() {
@@ -51,4 +76,3 @@ function render() {
 }
 
 animate();
-render();
