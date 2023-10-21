@@ -34,6 +34,7 @@ const objLoader = new OBJLoader();
 objLoader.load(
   'models/cube.obj',
   (object) => {
+    //object default material is a MeshPhongMaterial
     (object.children[0] as THREE.Mesh).material = material;
     // object.traverse(function (child) {
     //     if ((child as THREE.Mesh).isMesh) {
@@ -42,6 +43,7 @@ objLoader.load(
     // })
     scene.add(object);
   },
+  //this is where the loading parameters can be analized
   (xhr) => {
     console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
   },
