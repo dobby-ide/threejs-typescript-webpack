@@ -22,30 +22,32 @@ camera.position.z = 3;
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
-
+renderer.setClearColor(0xffffff, 0);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
 const mtlLoader = new MTLLoader();
 mtlLoader.load(
-  'models/monkey.mtl',
+  'models/untitled.mtl',
   (materials) => {
     materials.preload();
     console.log(materials);
-    // const objLoader = new OBJLoader()
-    // objLoader.setMaterials(materials)
-    // objLoader.load(
-    //     'models/monkey.obj',
-    //     (object) => {
-    //         scene.add(object)
-    //     },
-    //     (xhr) => {
-    //         console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
-    //     },
-    //     (error) => {
-    //         console.log('An error happened')
-    //     }
-    // )
+    const objLoader = new OBJLoader();
+    objLoader.setMaterials(materials);
+    objLoader.load(
+      'models/untitled.obj',
+      (object) => {
+        console.log(object);
+
+        scene.add(object);
+      },
+      (xhr) => {
+        console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
+      },
+      (error) => {
+        console.log('An error happened');
+      }
+    );
   },
   (xhr) => {
     console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
