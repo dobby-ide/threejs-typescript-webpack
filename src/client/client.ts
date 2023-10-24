@@ -6,10 +6,6 @@ import Stats from 'three/examples/jsm/libs/stats.module';
 const scene = new THREE.Scene();
 scene.add(new THREE.AxesHelper(5));
 
-// const light = new THREE.SpotLight();
-// light.position.set(5, 5, 5);
-// scene.add(light);
-
 const camera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
@@ -17,50 +13,75 @@ const camera = new THREE.PerspectiveCamera(
   1000
 );
 camera.position.z = 2;
+var objectToRotate: THREE.Object3D;
 
 const renderer = new THREE.WebGLRenderer();
-
-// Since Three r150, and Blender 3.6, lighting has changed significantly.
-//
-//renderer.physicallyCorrectLights = true; // is now deprecated since Three r150. Use renderer.useLegacyLights = false instead.
-//
-// If exporting lights from Blender, they are very bright.
-// lights exported from blender are 10000 times brighter when used in Threejs
-// so, you can counter this by setting renderer.useLegacyLights = false
-//renderer.useLegacyLights = false; // WebGLRenderer.physicallyCorrectLights = true is now WebGLRenderer.useLegacyLights = false
-// however, they are now still 100 times brighter in Threejs than in Blender,
-// so to try and match the threejs scene shown in video, reduce Spotlight watts in Blender to 10w.
-// The scene in blender will be lit very dull.
-// Blender and Threejs use different renderers, they will never match. Just try your best.
-//
+//renderer.physicallyCorrectLights = true //deprecated
+renderer.useLegacyLights = false; //use this instead of setting physicallyCorrectLights=true property
 renderer.shadowMap.enabled = true;
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
+// const controls = new OrbitControls(camera, renderer.domElement);
+// controls.enableDamping = true;
+
+// const material = new THREE.LineBasicMaterial({ color: 0xff0000 })
+// const points = new Array()
+// points.push( new THREE.Vector3( 0, 0, 0 ) )
+// points.push( new THREE.Vector3( 0, 0, .25 ) )
+// const geometry = new THREE.BufferGeometry().setFromPoints( points )
+// const line = new THREE.Line( geometry, material )
+// scene.add( line )
+
+// const arrowHelper = new THREE.ArrowHelper(
+//     new THREE.Vector3(),
+//     new THREE.Vector3(),
+//     .25,
+//     0xffff00)
+// scene.add(arrowHelper)
+
+// const material = new THREE.MeshNormalMaterial()
+
+// const boxGeometry = new THREE.BoxGeometry(.2, .2, .2)
+// const coneGeometry = new THREE.ConeGeometry(.05, .2, 8)
+
+const raycaster = new THREE.Raycaster();
+const sceneMeshes: THREE.Object3D[] = [];
 
 const loader = new GLTFLoader();
 loader.load(
   'models/monkey.glb',
   function (gltf) {
+    objectToRotate = gltf.scene;
+
+    document.addEventListener('wheel', function (event) {
+      if (objectToRotate) {
+        // Check if the object is loaded
+        var rotationSpeed = 0.02;
+        var delta = event.deltaY > 0 ? 1 : -1;
+        objectToRotate.children[1].rotation.x += delta * rotationSpeed;
+        event.preventDefault();
+      }
+    });
     gltf.scene.traverse(function (child) {
       if ((child as THREE.Mesh).isMesh) {
+        console.log(child);
         const m = child as THREE.Mesh;
         m.receiveShadow = true;
         m.castShadow = true;
+        // ;(m.material as THREE.MeshStandardMaterial).flatShading = true
+        sceneMeshes.push(m);
       }
       if ((child as THREE.Light).isLight) {
         const l = child as THREE.SpotLight;
         l.castShadow = true;
-
-        //bias prevents an object to be rendered in a dummy way because of casting and receiving shadow at the same time
         l.shadow.bias = -0.003;
-        l.shadow.mapSize.width = 1024;
-        l.shadow.mapSize.height = 1010;
+        l.shadow.mapSize.width = 2048;
+        l.shadow.mapSize.height = 2048;
       }
     });
     scene.add(gltf.scene);
+    //sceneMeshes.push(gltf.scene)
   },
   (xhr) => {
     console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
@@ -78,13 +99,77 @@ function onWindowResize() {
   render();
 }
 
+// renderer.domElement.addEventListener('dblclick', onDoubleClick, false)
+renderer.domElement.addEventListener('mousemove', onMouseMove, false);
+
+function onMouseMove(event: MouseEvent) {
+  const mouse = {
+    x: (event.clientX / renderer.domElement.clientWidth) * 2 - 1,
+    y: -(event.clientY / renderer.domElement.clientHeight) * 2 + 1,
+  } as THREE.Vector2;
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(sceneMeshes, false);
+
+  if (intersects.length > 0) {
+    //console.log(sceneMeshes.length + ' ' + intersects.length);
+    //console.log(intersects[0]);
+    console.log(
+      intersects[0].object.userData.name + ' ' + intersects[0].distance + ' '
+    );
+    //     //     // console.log((intersects[0].face as THREE.Face).normal)
+    //     //     // line.position.set(0, 0, 0)
+    //     //     // line.lookAt((intersects[0].face as THREE.Face).normal)
+    //     //     // line.position.copy(intersects[0].point)
+
+    //     //     // const n = new THREE.Vector3();
+    //     //     // n.copy((intersects[0].face as THREE.Face).normal);
+    //     //     // n.transformDirection(intersects[0].object.matrixWorld);
+
+    //     //     // arrowHelper.setDirection(n);
+    //     //     // arrowHelper.position.copy(intersects[0].point);
+    //     // }
+    // }
+
+    // function onDoubleClick(event: MouseEvent) {
+    //     const mouse = {
+    //         x: (event.clientX / renderer.domElement.clientWidth) * 2 - 1,
+    //         y: -(event.clientY / renderer.domElement.clientHeight) * 2 + 1
+    //     } as THREE.Vector2
+
+    //     raycaster.setFromCamera(mouse, camera)
+
+    //     const intersects = raycaster.intersectObjects(sceneMeshes, false)
+
+    //     if (intersects.length > 0) {
+
+    //         const n = new THREE.Vector3()
+    //         n.copy((intersects[0].face as THREE.Face).normal)
+    //         n.transformDirection(intersects[0].object.matrixWorld)
+
+    //         const cube = new THREE.Mesh(boxGeometry, material)
+    //         // const cube = new THREE.Mesh(coneGeometry, material)
+
+    //         cube.lookAt(n)
+    //         // cube.rotateX(Math.PI / 2)
+    //         cube.position.copy(intersects[0].point)
+    //         // cube.position.addScaledVector(n, .1)
+
+    //         scene.add(cube)
+    //         // sceneMeshes.push(cube)
+  }
+}
+
 const stats = new Stats();
 document.body.appendChild(stats.dom);
 
 function animate() {
   requestAnimationFrame(animate);
 
-  controls.update();
+  // controls.update();
+
+  // if (sceneMeshes.length > 1) {
+  //     sceneMeshes[0].rotation.x += .002
+  // }
 
   render();
 
